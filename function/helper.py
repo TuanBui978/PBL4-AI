@@ -1,5 +1,5 @@
 import math
-
+import re
 # license plate type classification helper function
 def linear_equation(x1, y1, x2, y2):
     b = y1 - (y2 - y1) * x1 / (x2 - x1)
@@ -62,3 +62,14 @@ def read_plate(yolo_license_plate, im):
         for l in sorted(center_list, key = lambda x: x[0]):
             license_plate += str(l[2])
     return license_plate
+
+def is_license_plate(plate):
+    # Biểu thức chính quy để kiểm tra biển số xe
+    pattern = r"^[1-9][1-9](?:[A-Z]|[A-Z][1-9]|[A-Z][A-Z])([0-9]-\d{4}|-\d{5})$"
+    
+    # Kiểm tra chuỗi với biểu thức chính quy
+    if re.match(pattern, plate):
+        print(True)
+        return True
+    print(False)
+    return False
