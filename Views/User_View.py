@@ -230,6 +230,8 @@ def show_video(parent, treeview):
     video_label = tk.Label(parent)
     video_label.pack(side="left", fill="both", expand=True)  # Make video label fill the frame
     detected_plates = set()
+    plate_stability = {}  # Lưu trạng thái ổn định của biển số
+
     def update_frame():
         nonlocal count, prev_frame_time
         ret, frame = vid.read()
@@ -238,7 +240,7 @@ def show_video(parent, treeview):
             plates = yolo_LP_detect(frame, size=640)
             list_plates = plates.pandas().xyxy[0].values.tolist()
             list_read_plates = set()
-            # Quá trình nhận diện biển số
+            
             for plate in list_plates:
                 flag = 0
                 x = int(plate[0])  # xmin
@@ -260,22 +262,37 @@ def show_video(parent, treeview):
                             break
                     if flag == 1:
                         break
+
+            # Kiểm tra sự ổn định của biển số
             for lp in list_read_plates:
-                # Nếu biển số chưa có trong set, thêm vào set và Treeview
-                if lp not in detected_plates and helper.is_license_plate(lp):
-                    detected_plates.add(lp)  # Thêm vào set đã phát hiện
-                    treeview.insert("", "end", values=(len(detected_plates), lp, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))) 
+                if helper.is_license_plate(lp):  # Kiểm tra nếu đúng định dạng biển số
+                    if lp not in detected_plates:
+                        # Tăng đếm số lần nhận diện liên tiếp
+                        plate_stability[lp] = plate_stability.get(lp, 0) + 1
+                        
+                        # Nếu đã nhận diện ổn định (ví dụ: 5 lần liên tiếp)
+                        if plate_stability[lp] >= 5:
+                            detected_plates.add(lp)  # Thêm vào set đã phát hiện
+                            treeview.insert("", "end", values=(len(detected_plates), lp, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                            del plate_stability[lp]  # Xóa khỏi kiểm tra ổn định sau khi thêm vào
+                    else:
+                        plate_stability.pop(lp, None)  # Xóa nếu biển số đã được thêm
+
+            # Tính FPS
             new_frame_time = time.time()
             fps = 1 / (new_frame_time - prev_frame_time)
             prev_frame_time = new_frame_time
             fps = int(fps)
-            # cv2.putText(frame, f"FPS: {fps}", (7, 70), cv2.FONT_HERSHEY_SIMPLEX, 3, (100, 255, 0), 3)
+
+            # Hiển thị video
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame_rgb)
             img_tk = ImageTk.PhotoImage(img)
             video_label.config(image=img_tk)
             video_label.image = img_tk
+
         video_label.after(1, update_frame)
+
     update_frame()
 
 
