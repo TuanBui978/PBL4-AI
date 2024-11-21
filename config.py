@@ -1,2 +1,2 @@
 # config.py
-DATABASE_URI = 'sqlite:///garage.db'
+DATABASE_URI = 'sqlite:///license_plate.db'

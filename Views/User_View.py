@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from Controllers.User_Controller import create_user, get_user_by_username
+from Controllers.License_Plate_Controler import *
 from database import get_db
 from tkinter import ttk
 import bcrypt
@@ -17,10 +17,13 @@ import threading
 from typing import Callable, Literal
 from tkinter import filedialog
 import Lp_image as ImageDetect
+from Controllers.Adruno_Controler import *
+import os
+from tkcalendar import Calendar
 
 
 
-url = "http://192.168.1.2"
+url = "http://192.168.35.67"
 
 vid: cv2.VideoCapture = None
 
@@ -131,6 +134,8 @@ def admin_view(root):
     image_detect_button.pack(fill="x", padx=10, pady=10)
     stream_button = tk.Button(navigate_frame, text="Camera Stream", command=lambda: start_detection(info_frame, yolo_license_plate, yolo_LP_detect))
     stream_button.pack(fill="x", padx=10, pady=10)
+    stream_button = tk.Button(navigate_frame, text="License Plate Detected", command=lambda: license_plate_detected(info_frame))
+    stream_button.pack(fill="x", padx=10, pady=10)
     exit_button = tk.Button(navigate_frame, text= "Exit", command=lambda: root.destroy())
     exit_button.pack(fill="x", padx=10, pady=10, side="bottom")
     image_detect(info_frame)
@@ -188,11 +193,10 @@ def start_detection(parent, yolo_license_plate, yolo_LP_detect):
         for label, value in stream_sources:
             if selected_label == label:  # So sánh chọn với label từ stream_sources
                 if selected_label == "Computer camera":
-                    # Nếu chọn "Computer camera", vô hiệu hóa ComboBox độ phân giải
                     resolution_combo_box.config(state="disabled")
                     loading_frame(vid_frame, lambda: load_video(value, "load"), lambda: show_video(vid_frame, treeview))
                 else:
-                    # Nếu chọn một stream khác, bật lại ComboBox độ phân giải
+                
                     resolution_combo_box.config(state="normal")
                     loading_frame(vid_frame, lambda: load_video(value, "init"), lambda: show_video(vid_frame, treeview))
                 break
@@ -271,10 +275,15 @@ def show_video(parent, treeview):
                         plate_stability[lp] = plate_stability.get(lp, 0) + 1
                         
                         # Nếu đã nhận diện ổn định (ví dụ: 5 lần liên tiếp)
-                        if plate_stability[lp] >= 5:
+                        if plate_stability[lp] >= 10:
+                            path = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  
                             detected_plates.add(lp)  # Thêm vào set đã phát hiện
                             treeview.insert("", "end", values=(len(detected_plates), lp, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                             del plate_stability[lp]  # Xóa khỏi kiểm tra ổn định sau khi thêm vào
+                            frame_path = os.path.join("Result", f"{path}.jpg")
+                            add_license_plate(lp, datetime.now(), frame_path)
+                            cv2.imwrite(frame_path, frame)
+                            # onLedandOffLed()
                     else:
                         plate_stability.pop(lp, None)  # Xóa nếu biển số đã được thêm
 
@@ -332,7 +341,134 @@ def image_detect(parent):
     image_label.pack()
     image_label.image = image_tk
 
+def open_calendar(parent, combo: ttk.Combobox):
+    """Hiển thị dialog chọn ngày"""
+    def select_date():
+        """Lấy ngày đã chọn và đặt vào Combobox"""
+        selected_date = cal.get_date()
+        
+        combo.set(selected_date)
+        top.destroy()
+
+    # Tạo cửa sổ con (Toplevel)
+    top = tk.Toplevel(parent)
+    top.title("Chọn ngày")
+    top.geometry("300x300")
+
+    # Thêm lịch
+    cal = Calendar(top, selectmode='day', year=2024, month=11, day=21, date_pattern="dd/mm/yyyy")
+    cal.pack(pady=20)
+
+    # Nút xác nhận
+    btn = ttk.Button(top, text="Xác nhận", command=select_date)
+    btn.pack(pady=10)
+
+def license_plate_detected(parent):
+    for widget in parent.winfo_children():
+        widget.destroy()
     
+    frame = tk.Frame(parent, width=600, height=480)
+    frame.pack(side="right")
+    image_label = tk.Label(frame)
+    image_label.pack(fill="both", expand=True)
+
+    info_frame = tk.Frame(parent)
+    info_frame.pack(side="top", fill='x')
+
+
+    entry_license_plate = tk.Entry(info_frame,)
+    entry_license_plate.pack(expand=True, fill="x", side="top")
+
+
+
+    time_frame = tk.Frame(info_frame)
+    time_frame.pack(expand=True, fill="x", side="top")
+
+    text = tk.Label(time_frame, text="From", width=5, justify="left", anchor="w")
+    text.pack_propagate(False)
+    text.pack(side="left")
+    fromDay = ttk.Combobox(time_frame)
+    fromDay.bind("<Button-1>", lambda event: open_calendar(parent, fromDay))
+    fromDay.pack(side="left", fill="x", expand=True, padx=(5,0))
+
+    text2 = tk.Label(time_frame, text="To", width=5, justify="left", anchor="w")
+    text2.pack_propagate(False)
+    text2.pack(side="left")
+    to = ttk.Combobox(time_frame)
+    to.bind("<Button-1>", lambda event: open_calendar(parent, to))
+    to.pack(side="left", fill="x", expand=True, padx=(5,0))
+
+    # Nút Lọc
+    filter_button = tk.Button(time_frame, text="Filter", command=lambda: filter_data(fromDay, to))
+    filter_button.pack(side="left", padx=5)
+
+    treeview = ttk.Treeview(parent, columns=("ID", "License Plate", "Timestamp"), show="headings")
+    treeview.pack(expand=True, fill="both", side="top")
+    treeview.heading("ID", text="ID")
+    treeview.heading("License Plate", text="License Plate")
+    treeview.heading("Timestamp", text="Timestamp")
+    treeview.column("ID", width=100, anchor="center")
+    treeview.column("License Plate", width=100, anchor="center")
+    treeview.column("Timestamp", width=200, anchor="center")
+
+    plates = get_all_license_plate()
+    for plate in plates:
+        treeview.insert("", "end", values=(plate.id, plate.license_plate, plate.time.strftime("%d/%m/%Y %H:%M:%S")))
+
+    def onTextChangeListener(text):
+        for item in treeview.get_children():
+            treeview.delete(item)
+        plates = get_license_plate_by_plate_num(text)
+        for plate in plates:
+            treeview.insert("", "end", values=(plate.id, plate.license_plate, plate.time.strftime("%d/%m/%Y %H:%M:%S")))
+
+    setOnTextChangeListener(entry=entry_license_plate, onTextChangeListener=onTextChangeListener)
+
+    def filter_data(fromDay, to):
+        """Lọc dữ liệu từ ngày đã chọn đến ngày đã chọn"""
+        from_date = fromDay.get()
+        to_date = to.get()
+
+        # Chuyển đổi định dạng ngày
+        try:
+            from_date = datetime.strptime(from_date, "%d/%m/%Y")
+            to_date = datetime.strptime(to_date, "%d/%m/%Y")
+        except ValueError:
+            print("Định dạng ngày không hợp lệ")
+            return
+
+        # Truy vấn dữ liệu
+        filtered_plates = get_license_plate_by_date_range(from_date, to_date)
+        for item in treeview.get_children():
+            treeview.delete(item)
+        for plate in filtered_plates:
+            treeview.insert("", "end", values=(plate.id, plate.license_plate, plate.time.strftime("%d/%m/%Y %H:%M:%S")))
+
+    def on_item_click(event):
+        selected_item = treeview.selection()
+        if selected_item:
+            item_values = treeview.item(selected_item)["values"]
+            plate_id = item_values[0]
+            plate = get_license_plate_by_id(plate_id)
+            file_path = plate.image_path
+            if file_path:
+                image = cv2.imread(file_path)
+                if image is not None:
+                    frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(frame_rgb)
+                    img = img.resize((640, 640), Image.LANCZOS)
+                    img_tk = ImageTk.PhotoImage(img)
+                    image_label.config(image=img_tk)
+                    image_label.image = img_tk
+
+    treeview.bind("<ButtonRelease-1>", on_item_click)
+def setOnTextChangeListener(entry, onTextChangeListener: Callable):
+    text_var = tk.StringVar()
+    text_var.trace_add("write", lambda *args: onTextChangeListener(text_var.get()))
+    entry.config(textvariable=text_var)
+
+
+
 
 
 def video_detect(parent):

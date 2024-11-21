@@ -2,7 +2,7 @@ from tkinter import *
 from database import Base, engine
 import tkinter as tk
 from tkinter import messagebox
-from Controllers.User_Controller import create_user, get_user_by_username
+from Controllers.License_Plate_Controler import create_user, get_user_by_username
 from database import get_db
 from tkinter import ttk
 import bcrypt
