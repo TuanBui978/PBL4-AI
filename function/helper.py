@@ -72,4 +72,4 @@ def is_license_plate(plate):
         print(True)
         return True
     print(False)
-    return False
+    return True

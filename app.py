@@ -7,5 +7,5 @@ Base.metadata.create_all(bind=engine)
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Lincense Plate")
-    first_screen(root, load_model, lambda: admin_view(root))
+    first_screen(root, load_model, lambda: login_form(root))
     root.mainloop()
