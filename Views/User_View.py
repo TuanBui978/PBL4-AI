@@ -20,6 +20,7 @@ import Lp_image as ImageDetect
 from Controllers.Adruno_Controler import *
 import os
 from tkcalendar import Calendar
+from Controllers.User_Cotroller import *
 
 
 
@@ -488,124 +489,123 @@ def video_detect(parent):
     image_label.pack()
     image_label.image = image_tk
     return
-# def show_create_user_form(root):
-#     def submit():
-#         username = entry_username.get()
-#         password = entry_password.get()
-#         retype_password = entry_retype_password.get()
-#         name = entry_name.get()
-#         address = entry_adrress.get()
-#         cccd = entry_CCCD.get()
-#         if (retype_password != password):
-#             messagebox.showerror("Error", "Password not match!")
-#             return
-#         if (username=="" or password == "" or retype_password == "" or name == "" or address == "" or cccd == ""):
-#             messagebox.showerror("Error", "Please fill all fields")
-#             return
-#         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-#         with next(get_db()) as db:
-#             if get_user_by_username(username, db):
-#                 messagebox.showerror("Error", "User already exists!")
-#                 return
-#             create_user(username, hashed_password, name, address, cccd, db)
-#             messagebox.showinfo("Success", "User created successfully!")
-#             frame.destroy
-#             switch_login()
-#     def switch_login():
-#         frame.destroy()
-#         login_form(root)
+def show_create_user_form(root):
+    def submit():
+        username = entry_username.get()
+        password = entry_password.get()
+        retype_password = entry_retype_password.get()
+        name = entry_name.get()
+        address = entry_address.get()
+        cccd = entry_cccd.get()
 
-#     # Tạo Frame để chứa các widget
-#     frame = ttk.Frame(root, padding=10)
-#     frame.pack(expand=True)
+        if retype_password != password:
+            messagebox.showerror("Error", "Passwords do not match!")
+            return
 
-#     # Username Label và Entry
-#     tk.Label(frame, text="Username", anchor='w').pack(fill='x', pady=5)
-#     entry_username = ttk.Entry(frame, width=40)
-#     entry_username.pack(pady=5)
+        if not all([username, password, retype_password, name, address, cccd]):
+            messagebox.showerror("Error", "Please fill all fields")
+            return
 
-#     # Password Label và Entry
-#     tk.Label(frame, text="Password", anchor='w').pack(fill='x', pady=5)
-#     entry_password = ttk.Entry(frame, width=40, show="*")
-#     entry_password.pack(pady=5)
+        with next(get_db()) as db:
+            if create_user(name=name, username=username, password=password, cccd=cccd, address=address, db=db) is None:
+                messagebox.showerror("Error", "User already exists!")
+                return
 
-#     # Retype Password Label và Entry
-#     tk.Label(frame, text="Retype Password", anchor='w').pack(fill='x', pady=5)
-#     entry_retype_password = ttk.Entry(frame, width=40, show="*")
-#     entry_retype_password.pack(pady=5)
+            messagebox.showinfo("Success", "User created successfully!")
+            frame.destroy()
+            switch_login()
 
-#     # Retype Password Label và Entry
-#     tk.Label(frame, text="Name", anchor='w').pack(fill='x', pady=5)
-#     entry_name = ttk.Entry(frame, width=40)
-#     entry_name.pack(pady=5)
+    def switch_login():
+        frame.destroy()
+        login_form(root)
 
-#     # Retype Password Label và Entry
-#     tk.Label(frame, text="Address", anchor='w').pack(fill='x', pady=5)
-#     entry_adrress = ttk.Entry(frame, width=40)
-#     entry_adrress.pack(pady=5)
+    # Tạo Frame để chứa các widget
+    frame = ttk.Frame(root, padding=10)
+    frame.pack(expand=True)
 
-#     tk.Label(frame, text="CCCD", anchor='w').pack(fill='x', pady=5)
-#     entry_CCCD = ttk.Entry(frame, width=40)
-#     entry_CCCD.pack(pady=5)
-#     # Nút tạo người dùng
-#     button_frame = ttk.Frame(frame)
-#     button_frame.pack(pady=10)
+    # Username Label và Entry
+    tk.Label(frame, text="Username", anchor='w').pack(fill='x', pady=5)
+    entry_username = ttk.Entry(frame, width=40)
+    entry_username.pack(pady=5)
 
-#     # Nút tạo người dùng và nút đăng ký
-#     tk.Button(button_frame, text="Register", command=submit).pack(side="left", padx=5)
-#     tk.Button(button_frame, text="Login", command=lambda: switch_login()).pack(side="left", padx=5)
+    # Password Label và Entry
+    tk.Label(frame, text="Password", anchor='w').pack(fill='x', pady=5)
+    entry_password = ttk.Entry(frame, width=40, show="*")
+    entry_password.pack(pady=5)
 
-#     root.mainloop()
+    # Retype Password Label và Entry
+    tk.Label(frame, text="Retype Password", anchor='w').pack(fill='x', pady=5)
+    entry_retype_password = ttk.Entry(frame, width=40, show="*")
+    entry_retype_password.pack(pady=5)
 
-# def login_form(root):
-#     def submit():
-#         username = entry_username.get()
-#         password = entry_password.get()
+    # Name Label và Entry
+    tk.Label(frame, text="Name", anchor='w').pack(fill='x', pady=5)
+    entry_name = ttk.Entry(frame, width=40)
+    entry_name.pack(pady=5)
 
-#         if username == "" or password == "":
-#             messagebox.showerror("Error", "Please enter both username and password")
-#             return
+    # Address Label và Entry
+    tk.Label(frame, text="Address", anchor='w').pack(fill='x', pady=5)
+    entry_address = ttk.Entry(frame, width=40)
+    entry_address.pack(pady=5)
 
-#         with next(get_db()) as db:
-#             # Lấy người dùng từ cơ sở dữ liệu
-#             user = get_user_by_username(username, db)
-            
-#             if not user:
-#                 messagebox.showerror("Error", "User does not exist")
-#                 return
-            
-#             # Kiểm tra mật khẩu
-#             stored_hashed_password = user.password  # Giả sử mật khẩu đã được lưu trữ với tên là 'password'
-            
-#             if bcrypt.checkpw(password.encode('utf-8'), stored_hashed_password):
-                
-#                 # Chuyển sang giao diện chính sau khi đăng nhập thành công
-#                 frame.destroy()
-#                 admin_view(root)
-#             else:
-#                 messagebox.showerror("Error", "Incorrect password")
-#     def switch_register():
-#         frame.destroy()
-#         show_create_user_form(root)
-#     # Tạo Frame để chứa các widget
-#     frame = ttk.Frame(root, padding=10)
-#     frame.pack(expand=True)
+    # CCCD Label và Entry
+    tk.Label(frame, text="CCCD", anchor='w').pack(fill='x', pady=5)
+    entry_cccd = ttk.Entry(frame, width=40)
+    entry_cccd.pack(pady=5)
 
-#     # Username Label và Entry
-#     tk.Label(frame, text="Username", anchor='w').pack(fill='x', pady=5)
-#     entry_username = ttk.Entry(frame, width=40)
-#     entry_username.pack(pady=5)
+    # Nút tạo người dùng
+    button_frame = ttk.Frame(frame)
+    button_frame.pack(pady=10)
 
-#     # Password Label và Entry
-#     tk.Label(frame, text="Password", anchor='w').pack(fill='x', pady=5)
-#     entry_password = ttk.Entry(frame, width=40, show="*")
-#     entry_password.pack(pady=5)
+    # Nút tạo người dùng và nút đăng ký
+    tk.Button(button_frame, text="Register", command=submit).pack(side="left", padx=5)
+    tk.Button(button_frame, text="Login", command=lambda: switch_login()).pack(side="left", padx=5)
 
-#     # Nút tạo người dùng
-#     button_frame = ttk.Frame(frame)
-#     button_frame.pack(pady=10)
+    root.mainloop()
 
-#     # Nút tạo người dùng và nút đăng ký
-#     tk.Button(button_frame, text="Login", command=submit).pack(side="left", padx=5)
-#     tk.Button(button_frame, text="Register", command=lambda: switch_register()).pack(side="left", padx=5)
-#     root.mainloop()
+def login_form(root):
+    def submit():
+        username = entry_username.get()
+        password = entry_password.get()
+
+        if not all([username, password]):
+            messagebox.showerror("Error", "Please enter both username and password")
+            return
+
+        with next(get_db()) as db:
+            user = login_user(username=username, password=password, db=db)
+
+            if not user:
+                messagebox.showerror("Error", "Invalid username or password")
+                return
+
+            frame.destroy()
+            admin_view(root)
+
+    def switch_register():
+        frame.destroy()
+        show_create_user_form(root)
+
+    # Tạo Frame để chứa các widget
+    frame = ttk.Frame(root, padding=10)
+    frame.pack(expand=True)
+
+    # Username Label và Entry
+    tk.Label(frame, text="Username", anchor='w').pack(fill='x', pady=5)
+    entry_username = ttk.Entry(frame, width=40)
+    entry_username.pack(pady=5)
+
+    # Password Label và Entry
+    tk.Label(frame, text="Password", anchor='w').pack(fill='x', pady=5)
+    entry_password = ttk.Entry(frame, width=40, show="*")
+    entry_password.pack(pady=5)
+
+    # Nút tạo người dùng
+    button_frame = ttk.Frame(frame)
+    button_frame.pack(pady=10)
+
+    # Nút tạo người dùng và nút đăng ký
+    tk.Button(button_frame, text="Login", command=submit).pack(side="left", padx=5)
+    tk.Button(button_frame, text="Register", command=lambda: switch_register()).pack(side="left", padx=5)
+
+    root.mainloop()
