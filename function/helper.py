@@ -69,7 +69,5 @@ def is_license_plate(plate):
     
     # Kiểm tra chuỗi với biểu thức chính quy
     if re.match(pattern, plate):
-        print(True)
         return True
-    print(False)
     return True
