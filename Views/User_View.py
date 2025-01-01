@@ -227,7 +227,6 @@ def start_detection(parent, yolo_license_plate, yolo_LP_detect):
     
 
 
-
 def show_video(parent, treeview):
     global vid
     for widget in parent.winfo_children():
