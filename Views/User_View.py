@@ -235,7 +235,7 @@ def show_video(parent, treeview):
     count = 0
     video_label = tk.Label(parent)
     video_label.pack(side="left", fill="both", expand=True)  # Make video label fill the frame
-    detected_plates = set()
+    detected_plates = {}  # Dictionary lưu biển số và thời gian phát hiện cuối cùng
     plate_stability = {}  # Lưu trạng thái ổn định của biển số
 
     def update_frame():
@@ -272,23 +272,26 @@ def show_video(parent, treeview):
             # Kiểm tra sự ổn định của biển số
             for lp in list_read_plates:
                 if helper.is_license_plate(lp):  # Kiểm tra nếu đúng định dạng biển số
-                    if lp not in detected_plates:
+                    current_time = datetime.now()
+
+                    # Kiểm tra nếu biển số chưa từng được phát hiện hoặc đã quá 1 phút từ lần cuối
+                    if lp not in detected_plates or (current_time - detected_plates[lp]).total_seconds() > 60:
                         # Tăng đếm số lần nhận diện liên tiếp
                         plate_stability[lp] = plate_stability.get(lp, 0) + 1
-                        
+
                         # Nếu đã nhận diện ổn định (ví dụ: 5 lần liên tiếp)
                         if plate_stability[lp] >= 10:
-                            path = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  
-                            detected_plates.add(lp)  # Thêm vào set đã phát hiện
-                            treeview.insert("", "end", values=(len(detected_plates), lp, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+                            path = current_time.strftime("%Y-%m-%d_%H-%M-%S")  
+                            detected_plates[lp] = current_time  # Cập nhật thời gian phát hiện cuối cùng
+                            treeview.insert("", "end", values=(len(detected_plates), lp, current_time.strftime("%Y-%m-%d %H:%M:%S")))
                             del plate_stability[lp]  # Xóa khỏi kiểm tra ổn định sau khi thêm vào
                             frame_path = os.path.join("Result", f"{path}.jpg")
-                            add_license_plate(lp, datetime.now(), frame_path)
+                            add_license_plate(lp, current_time, frame_path)
                             changeServo()
                             cv2.imwrite(frame_path, frame)
                             # onLedandOffLed()
                     else:
-                        plate_stability.pop(lp, None)  # Xóa nếu biển số đã được thêm
+                        plate_stability.pop(lp, None)  # Xóa nếu biển số không cần nhận diện lại
 
             # Tính FPS
             new_frame_time = time.time()
@@ -302,9 +305,7 @@ def show_video(parent, treeview):
             img_tk = ImageTk.PhotoImage(img)
             video_label.config(image=img_tk)
             video_label.image = img_tk
-
         video_label.after(1, update_frame)
-
     update_frame()
 
 
